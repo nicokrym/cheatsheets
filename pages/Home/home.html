@@ -3,14 +3,292 @@
      - Notifications (comments or like made to your posts)
      - loop search / filter
      - nav bar -->   
-<!DOCTYPE html>
-<html lang="en">
+     <!DOCTYPE html>
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Cheatsheets - Red Social</title>
+    <link rel="stylesheet" href="home.css">
 </head>
 <body>
-    
+    <!-- Skip to main content para accesibilidad -->
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+    <!-- Header móvil -->
+    <header class="mobile-header" role="banner">
+        <button 
+            class="menu-toggle" 
+            onclick="toggleSidebar()" 
+            aria-label="Abrir menú de navegación"
+            aria-expanded="false"
+            aria-controls="sidebar">
+            <span class="hamburger"></span>
+            <span class="hamburger"></span>
+            <span class="hamburger"></span>
+        </button>
+        <h1 class="logo-mobile">Cheatsheets</h1>
+        <button class="post-btn-mobile" aria-label="Crear nueva publicación">
+            <span class="sr-only">Crear</span>
+            <span aria-hidden="true">✏️</span>
+        </button>
+    </header>
+
+    <!-- Overlay para móvil -->
+    <div class="overlay" id="overlay" onclick="closeSidebar()" aria-hidden="true"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar" role="navigation" aria-label="Navegación principal">
+        <div class="sidebar-content">
+            <div class="logo" role="img" aria-label="Logo de Cheatsheets">Cheatsheets</div>
+            
+            <nav>
+                <ul class="menu" role="menubar">
+                    <li role="none">
+                        <a href="#" role="menuitem" class="menu-item active" aria-current="page">
+                            <span class="icon" aria-hidden="true">🏠</span>
+                            <span>Inicio</span>
+                        </a>
+                    </li>
+                    <li role="none">
+                        <a href="#" role="menuitem" class="menu-item">
+                            <span class="icon" aria-hidden="true">🔍</span>
+                            <span>Explorar</span>
+                        </a>
+                    </li>
+                    <li role="none">
+                        <a href="#" role="menuitem" class="menu-item">
+                            <span class="icon" aria-hidden="true">🔔</span>
+                            <span>Notificaciones</span>
+                        </a>
+                    </li>
+                    <li role="none">
+                        <a href="#" role="menuitem" class="menu-item">
+                            <span class="icon" aria-hidden="true">💬</span>
+                            <span>Mensajes</span>
+                        </a>
+                    </li>
+                    <li role="none">
+                        <a href="#" role="menuitem" class="menu-item">
+                            <span class="icon" aria-hidden="true">📖</span>
+                            <span>Guardados</span>
+                        </a>
+                    </li>
+                    <li role="none">
+                        <a href="#" role="menuitem" class="menu-item">
+                            <span class="icon" aria-hidden="true">👥</span>
+                            <span>Comunidades</span>
+                        </a>
+                    </li>
+                    <li role="none">
+                        <a href="#" role="menuitem" class="menu-item">
+                            <span class="icon" aria-hidden="true">⭐</span>
+                            <span>Premium</span>
+                        </a>
+                    </li>
+                    <li role="none">
+                        <a href="#" role="menuitem" class="menu-item">
+                            <span class="icon" aria-hidden="true">👤</span>
+                            <span>Perfil</span>
+                        </a>
+                    </li>
+                    <li role="none">
+                        <a href="#" role="menuitem" class="menu-item">
+                            <span class="icon" aria-hidden="true">⋯</span>
+                            <span>Más</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            
+            <button class="post-btn" aria-label="Crear nueva publicación">Publicar</button>
+        </div>
+        
+        <div class="user-box" id="userBox" role="region" aria-label="Información del usuario"></div>
+    </aside>
+
+    <!-- Contenido principal -->
+    <main class="main-content" id="main-content" role="main">
+        <header class="content-header">
+            <h1>Inicio</h1>
+        </header>
+
+        <!-- Formulario de nueva publicación -->
+        <section class="post-input" aria-label="Crear nueva publicación">
+            <form class="post-form" onsubmit="handlePostSubmit(event)">
+                <div class="post-input-container">
+                    <label for="post-textarea" class="sr-only">¿Qué está pasando?</label>
+                    <textarea 
+                        id="post-textarea"
+                        placeholder="¿Qué está pasando?" 
+                        rows="3"
+                        maxlength="280"
+                        aria-describedby="char-count"></textarea>
+                    
+                    <div class="post-actions">
+                        <div class="post-options" role="toolbar" aria-label="Opciones de publicación">
+                            <button type="button" class="option-btn" aria-label="Agregar imagen">
+                                <span aria-hidden="true">📷</span>
+                            </button>
+                            <button type="button" class="option-btn" aria-label="Agregar encuesta">
+                                <span aria-hidden="true">📊</span>
+                            </button>
+                            <button type="button" class="option-btn" aria-label="Agregar emoji">
+                                <span aria-hidden="true">😊</span>
+                            </button>
+                            <button type="button" class="option-btn" aria-label="Agregar ubicación">
+                                <span aria-hidden="true">📍</span>
+                            </button>
+                        </div>
+                        <div class="post-submit-area">
+                            <span id="char-count" class="char-count" aria-live="polite">280</span>
+                            <button type="submit" class="post-submit" disabled aria-label="Publicar mensaje">
+                                Publicar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </section>
+
+        <!-- Feed de publicaciones -->
+        <section class="posts" aria-label="Publicaciones recientes">
+            <article class="post" role="article">
+                <header class="post-header">
+                    <img src="/placeholder.svg?height=48&width=48" alt="Avatar de john_doe" class="user-avatar">
+                    <div class="user-info">
+                        <h3 class="username">John Doe</h3>
+                        <span class="handle">@john_doe</span>
+                        <span class="timestamp" aria-label="Publicado hace 2 horas">2h</span>
+                    </div>
+                </header>
+                
+                <div class="post-content">
+                    <p>¡Acabo de aprender sobre CSS Grid! Es increíble lo fácil que se vuelven los layouts con CSS moderno. #webdev #css</p>
+                </div>
+                
+                <footer class="post-actions-bar" role="toolbar" aria-label="Acciones de publicación">
+                    <button class="action-btn" aria-label="Comentar, 12 comentarios">
+                        <span aria-hidden="true">💬</span>
+                        <span>12</span>
+                    </button>
+                    <button class="action-btn" aria-label="Retwittear, 5 retweets">
+                        <span aria-hidden="true">🔄</span>
+                        <span>5</span>
+                    </button>
+                    <button class="action-btn" aria-label="Me gusta, 23 likes">
+                        <span aria-hidden="true">❤️</span>
+                        <span>23</span>
+                    </button>
+                    <button class="action-btn" aria-label="Compartir">
+                        <span aria-hidden="true">📤</span>
+                    </button>
+                </footer>
+            </article>
+
+            <article class="post" role="article">
+                <header class="post-header">
+                    <img src="/placeholder.svg?height=48&width=48" alt="Avatar de jane_smith" class="user-avatar">
+                    <div class="user-info">
+                        <h3 class="username">Jane Smith</h3>
+                        <span class="handle">@jane_smith</span>
+                        <span class="timestamp" aria-label="Publicado hace 4 horas">4h</span>
+                    </div>
+                </header>
+                
+                <div class="post-content">
+                    <p>Trabajando en un nuevo proyecto de React. ¡La arquitectura de componentes se vuelve más limpia cada día! 🚀</p>
+                </div>
+                
+                <footer class="post-actions-bar" role="toolbar" aria-label="Acciones de publicación">
+                    <button class="action-btn" aria-label="Comentar, 8 comentarios">
+                        <span aria-hidden="true">💬</span>
+                        <span>8</span>
+                    </button>
+                    <button class="action-btn" aria-label="Retwittear, 3 retweets">
+                        <span aria-hidden="true">🔄</span>
+                        <span>3</span>
+                    </button>
+                    <button class="action-btn" aria-label="Me gusta, 15 likes">
+                        <span aria-hidden="true">❤️</span>
+                        <span>15</span>
+                    </button>
+                    <button class="action-btn" aria-label="Compartir">
+                        <span aria-hidden="true">📤</span>
+                    </button>
+                </footer>
+            </article>
+        </section>
+    </main>
+
+    <!-- Panel derecho -->
+    <aside class="right-panel" role="complementary" aria-label="Contenido adicional">
+        <section class="subscribe" aria-labelledby="premium-heading">
+            <h2 id="premium-heading">Suscríbete a Premium</h2>
+            <p>Suscríbete para desbloquear nuevas funciones y, si eres elegible, recibir una parte de los ingresos por publicidad.</p>
+            <button class="subscribe-btn">Suscribirse</button>
+        </section>
+
+        <section class="trending" aria-labelledby="trending-heading">
+            <h2 id="trending-heading">Qué está pasando</h2>
+            <ul role="list">
+                <li role="listitem">
+                    <a href="#" class="trend-link">
+                        <div class="trend-info">
+                            <span class="trend-category">Tendencia en Tecnología</span>
+                            <span class="trend-title">CSS Grid</span>
+                            <span class="trend-posts">15.2K publicaciones</span>
+                        </div>
+                    </a>
+                </li>
+                <li role="listitem">
+                    <a href="#" class="trend-link">
+                        <div class="trend-info">
+                            <span class="trend-category">Tendencia en Programación</span>
+                            <span class="trend-title">React 18</span>
+                            <span class="trend-posts">8,547 publicaciones</span>
+                        </div>
+                    </a>
+                </li>
+                <li role="listitem">
+                    <a href="#" class="trend-link">
+                        <div class="trend-info">
+                            <span class="trend-category">Tendencia</span>
+                            <span class="trend-title">JavaScript</span>
+                            <span class="trend-posts">25.1K publicaciones</span>
+                        </div>
+                    </a>
+                </li>
+            </ul>
+        </section>
+
+        <section class="who-follow" aria-labelledby="follow-heading">
+            <h2 id="follow-heading">A quién seguir</h2>
+            <ul role="list">
+                <li role="listitem">
+                    <div class="follow-user">
+                        <img src="/placeholder.svg?height=40&width=40" alt="Avatar de Alex Johnson" class="follow-avatar">
+                        <div class="follow-info">
+                            <h3 class="follow-name">Alex Johnson</h3>
+                            <span class="follow-username">@alexdev</span>
+                        </div>
+                        <button class="follow-btn" aria-label="Seguir a Alex Johnson">Seguir</button>
+                    </div>
+                </li>
+                <li role="listitem">
+                    <div class="follow-user">
+                        <img src="/placeholder.svg?height=40&width=40" alt="Avatar de Sarah Wilson" class="follow-avatar">
+                        <div class="follow-info">
+                            <h3 class="follow-name">Sarah Wilson</h3>
+                            <span class="follow-username">@sarahcodes</span>
+                        </div>
+                        <button class="follow-btn" aria-label="Seguir a Sarah Wilson">Seguir</button>
+                    </div>
+                </li>
+            </ul>
+        </section>
+    </aside>
+
+    <script src="../../main.js"></script>
 </body>
 </html>

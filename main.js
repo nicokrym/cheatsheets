@@ -1,54 +1,368 @@
-// server.js
-const express = require('express');
-const multer = require('multer');
-const path = require('path');
-const app = express();
+// Variables globales
+const userBox = document.getElementById("userBox");
+const sidebar = document.getElementById("sidebar");
+const overlay = document.getElementById("overlay");
+const menuToggle = document.querySelector(".menu-toggle");
+const postTextarea = document.getElementById("post-textarea");
+const charCount = document.getElementById("char-count");
+const postSubmit = document.querySelector(".post-submit");
 
-const PORT = 3000;
-const upload = multer({ dest: 'uploads/' });
+// Estado de la aplicación
+let isLoggedIn = false;
+let sidebarOpen = false;
 
-app.use(express.urlencoded({ extended: true }));
-app.use('/uploads', express.static('uploads'));
-app.use(express.static('public'));
+// Inicialización
+document.addEventListener('DOMContentLoaded', function() {
+    updateUserBox();
+    setupEventListeners();
+    updateCharCount();
+});
 
-let cheatSheets = [];
-
-// Home page
-app.get('/', (req, res) => {
-  let html = `
-    <h1>Post a Cheat Sheet</h1>
-    <form method="POST" action="/submit" enctype="multipart/form-data">
-      <input name="title" placeholder="Title" required><br><br>
-      <textarea name="description" placeholder="Description" required></textarea><br><br>
-      <input type="file" name="image"><br><br>
-      <button type="submit">Post</button>
-    </form>
-    <hr>
-    <h2>All Cheat Sheets</h2>
-  `;
-
-  cheatSheets.forEach(sheet => {
-    html += `<div>
-      <h3>${sheet.title}</h3>
-      <p>${sheet.description}</p>`;
-    if (sheet.image) {
-      html += `<img src="${sheet.image}" alt="CheatSheet Image" width="300">`;
+// Configurar event listeners
+function setupEventListeners() {
+    // Textarea de publicación
+    if (postTextarea) {
+        postTextarea.addEventListener('input', updateCharCount);
+        postTextarea.addEventListener('input', updatePostButton);
     }
-    html += `</div><hr>`;
-  });
 
-  res.send(html);
+    // Cerrar sidebar con Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && sidebarOpen) {
+            closeSidebar();
+        }
+    });
+
+    // Navegación por teclado en el menú
+    const menuItems = document.querySelectorAll('.menu-item');
+    menuItems.forEach((item, index) => {
+        item.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                const nextItem = menuItems[index + 1] || menuItems[0];
+                nextItem.focus();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                const prevItem = menuItems[index - 1] || menuItems[menuItems.length - 1];
+                prevItem.focus();
+            }
+        });
+    });
+
+    // Redimensionar ventana
+    window.addEventListener('resize', handleResize);
+}
+
+// Actualizar información del usuario
+function updateUserBox() {
+    if (isLoggedIn) {
+        userBox.innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center;">
+                    <img src="/placeholder.svg?height=40&width=40" alt="Avatar del usuario" style="width: 40px; height: 40px; border-radius: 50%; margin-right: 12px;">
+                    <div>
+                        <p style="font-weight: bold; margin-bottom: 2px; color: #fff;">John Doe</p>
+                        <p style="font-size: 14px; color: #71767b;">@usuario_logueado</p>
+                    </div>
+                </div>
+                <button onclick="logout()" style="background: none; border: none; color: #71767b; cursor: pointer; padding: 8px; border-radius: 50%; transition: background-color 0.2s;" aria-label="Opciones de usuario">⋯</button>
+            </div>
+        `;
+    } else {
+        userBox.innerHTML = `
+            <div style="text-align: center;">
+                <p style="margin-bottom: 12px; color: #71767b;">No has iniciado sesión</p>
+                <button onclick="login()" style="background-color: #1DA1F2; border: none; color: #fff; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: bold; transition: background-color 0.2s;">Iniciar sesión</button>
+            </div>
+        `;
+    }
+}
+
+// Funciones de autenticación
+function login() {
+    isLoggedIn = true;
+    updateUserBox();
+    showNotification("¡Sesión iniciada correctamente!");
+}
+
+function logout() {
+    isLoggedIn = false;
+    updateUserBox();
+    showNotification("Sesión cerrada correctamente");
+}
+
+// Funciones del menú móvil
+function toggleSidebar() {
+    if (sidebarOpen) {
+        closeSidebar();
+    } else {
+        openSidebar();
+    }
+}
+
+function openSidebar() {
+    sidebar.classList.add('open');
+    overlay.classList.add('show');
+    menuToggle.classList.add('active');
+    menuToggle.setAttribute('aria-expanded', 'true');
+    document.body.style.overflow = 'hidden';
+    sidebarOpen = true;
+    
+    // Focus en el primer elemento del menú
+    const firstMenuItem = sidebar.querySelector('.menu-item');
+    if (firstMenuItem) {
+        firstMenuItem.focus();
+    }
+}
+
+function closeSidebar() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('show');
+    menuToggle.classList.remove('active');
+    menuToggle.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = 'auto';
+    sidebarOpen = false;
+    
+    // Devolver focus al botón de menú
+    menuToggle.focus();
+}
+
+// Manejar redimensionamiento
+function handleResize() {
+    if (window.innerWidth > 768 && sidebarOpen) {
+        closeSidebar();
+    }
+}
+
+// Contador de caracteres
+function updateCharCount() {
+    if (!postTextarea || !charCount) return;
+    
+    const currentLength = postTextarea.value.length;
+    const maxLength = 280;
+    const remaining = maxLength - currentLength;
+    
+    charCount.textContent = remaining;
+    
+    // Cambiar color según caracteres restantes
+    charCount.className = 'char-count';
+    if (remaining < 20) {
+        charCount.classList.add('warning');
+    }
+    if (remaining < 0) {
+        charCount.classList.add('error');
+    }
+    
+    // Anunciar cambios para lectores de pantalla
+    if (remaining === 20) {
+        announceToScreenReader("Quedan 20 caracteres");
+    } else if (remaining === 0) {
+        announceToScreenReader("Límite de caracteres alcanzado");
+    }
+}
+
+// Actualizar estado del botón de publicar
+function updatePostButton() {
+    if (!postTextarea || !postSubmit) return;
+    
+    const hasContent = postTextarea.value.trim().length > 0;
+    const withinLimit = postTextarea.value.length <= 280;
+    
+    postSubmit.disabled = !hasContent || !withinLimit;
+}
+
+// Manejar envío de publicación
+function handlePostSubmit(event) {
+    event.preventDefault();
+    
+    if (!postTextarea) return;
+    
+    const content = postTextarea.value.trim();
+    
+    if (content && content.length <= 280) {
+        // Simular envío
+        showNotification("¡Publicación enviada!");
+        postTextarea.value = '';
+        updateCharCount();
+        updatePostButton();
+        
+        // Agregar la publicación al feed (simulado)
+        addPostToFeed(content);
+    }
+}
+
+// Agregar publicación al feed
+function addPostToFeed(content) {
+    const postsContainer = document.querySelector('.posts');
+    if (!postsContainer) return;
+    
+    const newPost = document.createElement('article');
+    newPost.className = 'post';
+    newPost.role = 'article';
+    
+    newPost.innerHTML = `
+        <header class="post-header">
+            <img src="/placeholder.svg?height=48&width=48" alt="Tu avatar" class="user-avatar">
+            <div class="user-info">
+                <h3 class="username">${isLoggedIn ? 'Tú' : 'Usuario'}</h3>
+                <span class="handle">@${isLoggedIn ? 'usuario_logueado' : 'usuario'}</span>
+                <span class="timestamp" aria-label="Publicado ahora">ahora</span>
+            </div>
+        </header>
+        
+        <div class="post-content">
+            <p>${escapeHtml(content)}</p>
+        </div>
+        
+        <footer class="post-actions-bar" role="toolbar" aria-label="Acciones de publicación">
+            <button class="action-btn" aria-label="Comentar">
+                <span aria-hidden="true">💬</span>
+                <span>0</span>
+            </button>
+            <button class="action-btn" aria-label="Retwittear">
+                <span aria-hidden="true">🔄</span>
+                <span>0</span>
+            </button>
+            <button class="action-btn" aria-label="Me gusta">
+                <span aria-hidden="true">❤️</span>
+                <span>0</span>
+            </button>
+            <button class="action-btn" aria-label="Compartir">
+                <span aria-hidden="true">📤</span>
+            </button>
+        </footer>
+    `;
+    
+    // Insertar al principio del feed
+    postsContainer.insertBefore(newPost, postsContainer.firstChild);
+    
+    // Configurar event listeners para los nuevos botones
+    setupPostActionListeners(newPost);
+}
+
+// Configurar listeners para acciones de posts
+function setupPostActionListeners(postElement) {
+    const actionButtons = postElement.querySelectorAll('.action-btn');
+    
+    actionButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const action = this.getAttribute('aria-label');
+            handlePostAction(action, this);
+        });
+    });
+}
+
+// Manejar acciones de posts
+function handlePostAction(action, button) {
+    const countSpan = button.querySelector('span:last-child');
+    
+    if (action.includes('Me gusta')) {
+        const currentCount = parseInt(countSpan.textContent) || 0;
+        countSpan.textContent = currentCount + 1;
+        button.style.color = '#f91880';
+        showNotification("¡Te gusta esta publicación!");
+    } else if (action.includes('Retwittear')) {
+        const currentCount = parseInt(countSpan.textContent) || 0;
+        countSpan.textContent = currentCount + 1;
+        button.style.color = '#00ba7c';
+        showNotification("¡Publicación retwitteada!");
+    } else if (action.includes('Comentar')) {
+        showNotification("Función de comentarios próximamente");
+    } else if (action.includes('Compartir')) {
+        showNotification("Función de compartir próximamente");
+    }
+}
+
+// Mostrar notificaciones
+function showNotification(message) {
+    // Crear elemento de notificación
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background-color: #1DA1F2;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        z-index: 10000;
+        font-weight: bold;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Animar entrada
+    setTimeout(() => {
+        notification.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Anunciar a lectores de pantalla
+    announceToScreenReader(message);
+    
+    // Remover después de 3 segundos
+    setTimeout(() => {
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
+}
+
+// Anunciar a lectores de pantalla
+function announceToScreenReader(message) {
+    const announcement = document.createElement('div');
+    announcement.setAttribute('aria-live', 'polite');
+    announcement.setAttribute('aria-atomic', 'true');
+    announcement.className = 'sr-only';
+    announcement.textContent = message;
+    
+    document.body.appendChild(announcement);
+    
+    setTimeout(() => {
+        document.body.removeChild(announcement);
+    }, 1000);
+}
+
+// Escapar HTML para prevenir XSS
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Configurar listeners para posts existentes
+document.addEventListener('DOMContentLoaded', function() {
+    const existingPosts = document.querySelectorAll('.post');
+    existingPosts.forEach(setupPostActionListeners);
 });
 
-// Handle form submission
-app.post('/submit', upload.single('image'), (req, res) => {
-  const { title, description } = req.body;
-  const image = req.file ? `/uploads/${req.file.filename}` : null;
-
-  cheatSheets.push({ title, description, image });
-  res.redirect('/');
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+// Manejar clicks en enlaces del menú
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.menu-item')) {
+        e.preventDefault();
+        const menuItem = e.target.closest('.menu-item');
+        const text = menuItem.textContent.trim();
+        
+        // Remover clase active de todos los elementos
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.classList.remove('active');
+            item.removeAttribute('aria-current');
+        });
+        
+        // Agregar clase active al elemento clickeado
+        menuItem.classList.add('active');
+        menuItem.setAttribute('aria-current', 'page');
+        
+        showNotification(`Navegando a ${text}`);
+        
+        // Cerrar sidebar en móvil
+        if (window.innerWidth <= 768) {
+            closeSidebar();
+        }
+    }
 });
